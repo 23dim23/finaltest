@@ -1,0 +1,33 @@
+{
+  "5659638424": {
+    "thread_id": 166,
+    "type": "chat",
+    "state": null,
+    "tariff": null,
+    "notified": false,
+    "msg_count": 35
+  },
+  "8755713304": {
+    "type": "chat",
+    "thread_id": 164,
+    "name": "Vacancy",
+    "state": null,
+    "tariff": null,
+    "notified": false,
+    "msg_count": 15
+  },
+  "8679016850": {
+    "type": "admin_chat",
+    "state": "writing_text",
+    "tariff": null,
+    "thread_id": 752,
+    "notified": true,
+    "msg_count": 3
+  },
+  "702060967": {
+    "type": "chat",
+    "state": null,
+    "tariff": null,
+    "thread_id": 765
+  }
+}
