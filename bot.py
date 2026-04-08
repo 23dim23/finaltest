@@ -6,7 +6,7 @@ import sqlite3
 import re
 
 # ==================== НАСТРОЙКИ ====================
-TOKEN = '7734545241:AAGJNwk-5YnMgYZvZJYS3T3rVkLAwM8yjF0' 
+TOKEN = '7941528893:AAFCMSzgUH3fuMc2cTXzKaPJKXTjZYXNkS4' 
 SUPER_GROUP_ID = -1003455134116
 ADMIN_ID = 5659638424 
 DATA_FILE = 'user_threads.json'
@@ -15,7 +15,7 @@ DB_FILE = 'parser_data.db'
 
 # Конфигурация каналов и их хэштегов
 CHANNELS_CONFIG = {
-    "🎥 Монтаж": {"channel": "@youtirkdfs", "tags": "\n\n#вакансия #монтаж"},
+    "🎥 Монтаж": {"channel": "@GetJob_videoedit", "tags": "\n\n#вакансия #монтаж"},
     "📱 SMM": {"channel": "@GetJob_smm", "tags": "\n\n#вакансия #smm"},
     "💻 IT/Разработка": {"channel": "@GetJob_IT", "tags": "\n\n#вакансия #IT"},
     "✍️ Копирайтинг": {"channel": "@GetJob_copyright", "tags": "\n\n#вакансия #копирайт"},
@@ -146,7 +146,6 @@ def check_and_send_ad(chat_id):
 # ==================== КЛАВИАТУРЫ ====================
 
 def get_reply_main_menu():
-    """Кнопка под клавиатурой для быстрого возврата"""
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(types.KeyboardButton("🏠 Главное меню"))
     return markup
@@ -331,7 +330,6 @@ def process_submission_time(message, user_data):
     chat_id = str(message.chat.id)
     if message.text and message.text.startswith('/'): return
     
-    # ПРОВЕРКА СОСТОЯНИЯ: Если пользователь нажал "Назад", состояние уже другое
     user_threads = load_json(DATA_FILE, {})
     if user_threads.get(chat_id, {}).get("state") != "writing_time":
         return
@@ -347,7 +345,6 @@ def wait_for_screenshot(message, user_data):
     chat_id = str(message.chat.id)
     if message.text and message.text.startswith('/'): return
     
-    # Проверка состояния
     user_threads = load_json(DATA_FILE, {})
     if user_threads.get(chat_id, {}).get("state") != "waiting_screenshot":
         return
@@ -379,7 +376,6 @@ def callback_handler(call):
     chat_id = str(call.message.chat.id)
     data = call.data
     
-    # КРИТИЧЕСКИЙ ФИКС: Сбрасываем все ожидающие хендлеры при нажатии кнопок навигации
     bot.clear_step_handler_by_chat_id(chat_id)
     
     user_threads = load_json(DATA_FILE, {})
@@ -459,7 +455,6 @@ def callback_handler(call):
         current_val = current_settings.get(key, "Не установлено")
         user_threads[chat_id]["state"] = "editing_setting"
         save_json(DATA_FILE, user_threads)
-        # ИНТЕГРИРОВАННЫЙ ФУНКЦИОНАЛ ПРОСМОТРА ТЕКУЩЕГО ТЕКСТА
         msg_text = f"✍️ <b>Введите новое значение для {key}</b>\n\nТекущий текст:\n<pre>{current_val}</pre>"
         msg = safe_send_message(chat_id, msg_text, reply_markup=get_cancel_menu())
         bot.register_next_step_handler(msg, save_new_setting, key)
@@ -469,7 +464,6 @@ def callback_handler(call):
         save_json(DATA_FILE, user_threads)
         bot.edit_message_text(current_settings.get("txt_start", "🏠 Меню:"), chat_id, call.message.message_id, reply_markup=get_main_menu(), parse_mode='HTML')
 
-    # ЛОГИКА "НАЗАД"
     elif data == "back_to_text":
         utype = user_threads[chat_id].get("type", "vacancy")
         user_threads[chat_id].update({"state": "writing_text"})
@@ -509,17 +503,11 @@ def callback_handler(call):
         bot.edit_message_text("✅ Выберите способ оплаты:", chat_id, call.message.message_id, reply_markup=get_payment_choice_menu())
 
     elif data in ["pay_rf", "pay_rb", "pay_crypto"]:
-        # --- ФИКС БАГА ЗДЕСЬ ---
-        # Получаем реквизиты и текст запроса чека из настроек
         pay_info = current_settings.get(data, "")
         wait_check_text = current_settings.get("txt_wait_check", "\n\nПришлите чек:")
-        
         final_text = f"{pay_info}\n\n{wait_check_text}"
-        
-        # Используем safe_send_message для надежности
-        bot.delete_message(chat_id, call.message.message_id) # Удаляем старое меню для чистоты
+        bot.delete_message(chat_id, call.message.message_id) 
         msg = safe_send_message(chat_id, final_text, reply_markup=get_nav_menu("back_to_payment_choice"))
-        
         user_threads[chat_id]["state"] = "waiting_screenshot"
         save_json(DATA_FILE, user_threads)
         bot.register_next_step_handler(msg, wait_for_screenshot, user_threads[chat_id])
@@ -548,17 +536,41 @@ def commands_handler(message):
     chat_id = str(message.chat.id)
     bot.clear_step_handler_by_chat_id(chat_id)
     user_threads = load_json(DATA_FILE, {})
-    if chat_id not in user_threads: user_threads[chat_id] = {}
+    
+    # --- НОВАЯ ФИШКА: Создание топика сразу при /start ---
+    if chat_id not in user_threads or not user_threads[chat_id].get("thread_id"):
+        try:
+            user_name = message.from_user.first_name or "User"
+            # Создаем топик
+            topic = bot.create_forum_topic(SUPER_GROUP_ID, f"{user_name} ({chat_id})")
+            
+            # Инициализируем данные
+            user_threads[chat_id] = {
+                "thread_id": topic.message_thread_id, 
+                "type": "chat", 
+                "state": None, 
+                "notified": False,
+                "msg_count": 0
+            }
+            save_json(DATA_FILE, user_threads)
+            
+            # Уведомление для админа в новый топик
+            username_tg = f"@{message.from_user.username}" if message.from_user.username else "нет"
+            admin_msg = f"🆕 <b>Новый пользователь зашел в бота!</b>\n\nИмя: {user_name}\nTG: {username_tg}\nID: <code>{chat_id}</code>"
+            bot.send_message(SUPER_GROUP_ID, admin_msg, message_thread_id=topic.message_thread_id, parse_mode='HTML')
+            print(f"✅ Создан топик для {user_name}")
+        except Exception as e:
+            print(f"❌ Ошибка создания топика: {e}")
+            if chat_id not in user_threads: user_threads[chat_id] = {"thread_id": None}
+    
     user_threads[chat_id].update({"type": "chat", "state": None, "notified": False})
     save_json(DATA_FILE, user_threads)
     
     if message.text == '/admin_panel' and message.from_user.id == ADMIN_ID:
         bot.send_message(chat_id, "⚙️ Панель администратора:", reply_markup=get_admin_panel_markup())
     else:
-        # Устанавливаем Reply-клавиатуру при старте
         bot.send_message(chat_id, current_settings.get("txt_start"), 
                          reply_markup=get_reply_main_menu(), parse_mode='HTML')
-        # Дублируем инлайн-меню
         bot.send_message(chat_id, "Выберите действие:", reply_markup=get_main_menu())
 
 @bot.message_handler(func=lambda m: m.chat.id == SUPER_GROUP_ID and m.reply_to_message is not None)
@@ -573,9 +585,8 @@ def handle_admin_reply(message):
 def handle_user_messages(message):
     chat_id = str(message.chat.id)
     
-    # 1. ОБРАБОТКА КНОПКИ СБРОСА (🏠 Главное меню)
     if message.text == "🏠 Главное меню":
-        bot.clear_step_handler_by_chat_id(chat_id)  # Прерываем register_next_step_handler
+        bot.clear_step_handler_by_chat_id(chat_id)
         user_threads = load_json(DATA_FILE, {})
         if chat_id in user_threads:
             user_threads[chat_id].update({"state": None, "type": "chat", "tariff": None, "notified": False})
@@ -588,15 +599,17 @@ def handle_user_messages(message):
     if message.text and message.text.startswith('/'): return
     
     user_threads = load_json(DATA_FILE, {})
-    if chat_id not in user_threads: user_threads[chat_id] = {"thread_id": None, "type": "chat", "state": None, "notified": False}
+    if chat_id not in user_threads: 
+        # Если вдруг юзер пишет, а топика нет (напр. бот был выключен при /start)
+        user_threads[chat_id] = {"thread_id": None, "type": "chat", "state": None, "notified": False}
+    
     user_data = user_threads[chat_id]
 
-    # Если пользователь прислал текст в некорректном состоянии
     if user_data.get("state") in ["waiting_tariff", "waiting_payment_choice"] and user_data.get("type") in ["vacancy", "resume"]:
         bot.send_message(chat_id, "⚠️ Используйте кнопки меню для навигации.")
         return
 
-    # Создание топика, если его нет
+    # Запасная проверка топика перед отправкой
     if not user_data.get("thread_id"):
         try:
             topic = bot.create_forum_topic(SUPER_GROUP_ID, f"{message.from_user.first_name}")
@@ -604,22 +617,18 @@ def handle_user_messages(message):
             save_json(DATA_FILE, user_threads)
         except: return
 
-    # Если пользователь пишет текст вакансии/резюме
     if user_data.get("type") in ["vacancy", "resume"] and user_data.get("state") == "writing_text":
         label = "💼 <b>ВАКАНСИЯ</b>" if user_data["type"] == "vacancy" else "👤 <b>РЕЗЮМЕ</b>"
         bot.send_message(SUPER_GROUP_ID, label, message_thread_id=user_data["thread_id"], parse_mode='HTML')
         bot.copy_message(SUPER_GROUP_ID, chat_id, message.message_id, message_thread_id=user_data["thread_id"], reply_markup=get_user_info_btn(chat_id))
         
-        # Переводим в состояние ожидания времени
         user_threads[chat_id]["state"] = "writing_time"
         save_json(DATA_FILE, user_threads)
         
-        # ФИКС БАГА: Теперь текст берется из настроек (txt_wait_time)
         wait_time_text = current_settings.get("txt_wait_time", "Напишите время публикации:")
         msg = safe_send_message(chat_id, wait_time_text, reply_markup=get_nav_menu("back_to_text"))
         bot.register_next_step_handler(msg, process_submission_time, user_threads[chat_id])
     else:
-        # Обычный чат с админом
         bot.copy_message(SUPER_GROUP_ID, chat_id, message.message_id, message_thread_id=user_data["thread_id"], reply_markup=get_user_info_btn(chat_id))
         if not user_data.get("notified"):
             bot.send_message(chat_id, "✅ Сообщение отправлено.")

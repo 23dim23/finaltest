@@ -5,7 +5,7 @@
     "state": null,
     "tariff": null,
     "notified": false,
-    "msg_count": 35
+    "msg_count": 71
   },
   "8755713304": {
     "type": "chat",
@@ -14,20 +14,29 @@
     "state": null,
     "tariff": null,
     "notified": false,
-    "msg_count": 15
+    "msg_count": 20
   },
   "8679016850": {
-    "type": "admin_chat",
-    "state": "writing_text",
+    "type": "chat",
+    "state": null,
     "tariff": null,
     "thread_id": 752,
     "notified": true,
-    "msg_count": 3
+    "msg_count": 7
   },
   "702060967": {
     "type": "chat",
     "state": null,
     "tariff": null,
-    "thread_id": 765
+    "thread_id": 765,
+    "notified": false
+  },
+  "1101184810": {
+    "type": "admin_chat",
+    "state": "writing_text",
+    "notified": false,
+    "thread_id": 1246,
+    "msg_count": 1,
+    "tariff": null
   }
 }

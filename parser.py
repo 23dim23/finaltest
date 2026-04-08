@@ -3,13 +3,14 @@ import asyncio
 import re
 import requests
 import html
+import sys
 from pyrogram import Client, enums
 
 # --- НАСТРОЙКИ ---
 API_ID = 33481567 
 API_HASH = "93d073404049ef77e94be613d29fb57d"
 # Токен твоего актуального бота @your_shortsbot
-BOT_TOKEN = "7734545241:AAGJNwk-5YnMgYZvZJYS3T3rVkLAwM8yjF0" 
+BOT_TOKEN = "7941528893:AAFCMSzgUH3fuMc2cTXzKaPJKXTjZYXNkS4" 
 # ID твоей группы из основного кода бота
 TARGET_GROUP_ID = -1003455134116 
 REPORT_TOPIC_ID = 1 
@@ -180,4 +181,9 @@ async def main():
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    app.run(main())
+    try:
+        app.run(main())
+    except Exception as e:
+        print(f"💥 Критическая ошибка в работе Pyrogram: {e}")
+        # Выходим с кодом 1, чтобы main.py мог перезапустить скрипт
+        sys.exit(1)

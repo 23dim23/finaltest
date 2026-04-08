@@ -1,22 +1,24 @@
 import subprocess
 import time
+import sys
 
-# Список скриптов для запуска
 scripts = ["bot.py", "parser.py"]
 
-processes = []
+def run_script(script_name):
+    print(f"🚀 Запуск {script_name}...")
+    return subprocess.Popen([sys.executable, script_name])
 
-for script in scripts:
-    print(f"🚀 Запуск {script}...")
-    # Запускаем каждый скрипт как отдельный процесс
-    p = subprocess.Popen(["python", script])
-    processes.append(p)
-
-print("✅ Все системы запущены!")
+processes = {script: run_script(script) for script in scripts}
 
 try:
     while True:
-        time.sleep(60)
+        for script, process in processes.items():
+            # Если процесс завершился, значит он упал
+            if process.poll() is not None:
+                print(f"⚠️ {script} упал (код {process.returncode}). Перезапуск...")
+                time.sleep(5)
+                processes[script] = run_script(script)
+        time.sleep(10)
 except KeyboardInterrupt:
-    for p in processes:
+    for p in processes.values():
         p.terminate()
