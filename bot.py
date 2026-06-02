@@ -5,6 +5,7 @@ import os
 import sqlite3
 import re
 from datetime import datetime, timedelta
+import requests
 
 # ==================== НАСТРОЙКИ ====================
 TOKEN = '7941528893:AAFCMSzgUH3fuMc2cTXzKaPJKXTjZYXNkS4' 
@@ -13,6 +14,10 @@ ADMIN_ID = 5659638424
 DATA_FILE = 'user_threads.json'
 SETTINGS_FILE = 'settings.json'
 DB_FILE = 'parser_data.db' 
+
+# Supabase настройки
+SUPABASE_URL = "https://kepnlizopxzxlwtgkows.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlcG5saXpvcHh6eGx3dGdrb3dzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODE2Njg2MSwiZXhwIjoyMDkzNzQyODYxfQ.0KWSq3rLyI3DoDQ5MwdHcJvIPXiGhTU41oVnE0NM2ZI"
 
 # Конфигурация каналов и их хэштегов
 CHANNELS_CONFIG = {
@@ -23,12 +28,46 @@ CHANNELS_CONFIG = {
     "📊 Менеджмент": {"channel": "@GetJob_manager", "tags": "\n\n#вакансия #менеджер"},
     "🎨 Дизайн": {"channel": "@GetJob_design", "tags": "\n\n#вакансия #дизайн"}
 }
+
+# Маппинг категорий для сайта
+CATEGORY_MAPPING = {
+    "🎥 Монтаж": {"channel": "@GetJob_videoedit", "id": 1},
+    "📱 SMM": {"channel": "@GetJob_smm", "id": 2},
+    "💻 IT/Разработка": {"channel": "@GetJob_IT", "id": 3},
+    "✍️ Копирайтинг": {"channel": "@GetJob_copyright", "id": 4},
+    "📊 Менеджмент": {"channel": "@GetJob_manager", "id": 5},
+    "🎨 Дизайн": {"channel": "@GetJob_design", "id": 6},
+}
+
+# Обратный маппинг для быстрого поиска
+CHANNEL_TO_CATEGORY = {v["channel"]: v["id"] for v in CATEGORY_MAPPING.values()}
 # ===================================================
 
 bot = telebot.TeleBot(TOKEN)
 
 # Словарь для хранения временных данных при редактировании контакта
 pending_contacts = {}
+
+# --- ФУНКЦИЯ ОЧИСТКИ ТЕКСТА ВАКАНСИИ ---
+def clean_vacancy_text(text):
+    """Удаляет шапку, контакт, инструкцию и хэштеги, оставляя чистый текст вакансии"""
+    # Удаляем шапку | VACANCY |
+    text = re.sub(r'^\| 🇻 🇦 🇨 🇦 🇳 🇨 🇾 \|\n*\n*', '', text)
+    
+    # Удаляем блок "Контакт для связи:" и всё до следующего блока
+    text = re.sub(r'\n*Контакт для связи:.*?\n*\n*', '\n', text, flags=re.DOTALL)
+    
+    # Удаляем инструкцию "Для публикации вакансии..."
+    text = re.sub(r'\n*<b><code>Для публикации вакансии\\резюме.*?</a></b>\n*', '', text, flags=re.DOTALL)
+    
+    # Удаляем хэштеги в конце
+    text = re.sub(r'\n*#вакансия\s*#парсер\s*$', '', text)
+    text = re.sub(r'\n*#вакансия\s*#\w+\s*$', '', text)
+    
+    # Убираем лишние пустые строки
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    return text.strip()
 
 # --- РАБОТА С БАЗОЙ ДАННЫХ ПАРСЕРА ---
 def init_db():
@@ -80,6 +119,23 @@ def init_db():
         date DATE
     )''')
     
+    # Таблица для вакансий (локальная)
+    cursor.execute('''CREATE TABLE IF NOT EXISTS vacancies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        category_id INTEGER NOT NULL,
+        source_channel TEXT NOT NULL,
+        source_message_id INTEGER,
+        telegram_link TEXT,
+        status TEXT DEFAULT 'active',
+        is_hot INTEGER DEFAULT 0,
+        published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP,
+        views INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
     # Добавляем настройки по умолчанию
     cursor.execute("SELECT COUNT(*) FROM recommend_settings")
     if cursor.fetchone()[0] == 0:
@@ -97,6 +153,75 @@ def init_db():
     print("✅ База данных готова")
 
 init_db()
+
+# --- ФУНКЦИИ СОХРАНЕНИЯ ВАКАНСИЙ ---
+def save_vacancy_to_db(title, description, category_id, source_channel, source_message_id, telegram_link):
+    """Сохраняет опубликованную вакансию в локальную БД"""
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        expires_at = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+        
+        cursor.execute('''
+            INSERT INTO vacancies (title, description, category_id, source_channel, source_message_id, telegram_link, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (title[:200], description, category_id, source_channel, source_message_id, telegram_link, expires_at))
+        
+        conn.commit()
+        conn.close()
+        print(f"✅ Вакансия сохранена в локальную БД: {title[:50]}")
+        return True
+    except Exception as e:
+        print(f"❌ Ошибка сохранения в локальную БД: {e}")
+        return False
+
+def save_to_supabase(title, description, category_id, source_channel, source_message_id, telegram_link):
+    """Отправка вакансии в облачную БД Supabase"""
+    try:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        expires = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+        
+        response = requests.post(
+            f"{SUPABASE_URL}/rest/v1/vacancies",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            json={
+                "title": title[:200],
+                "description": description,
+                "category_id": category_id,
+                "source_channel": source_channel,
+                "source_message_id": source_message_id,
+                "telegram_link": telegram_link,
+                "status": "active",
+                "is_hot": 0,
+                "published_at": now,
+                "expires_at": expires,
+                "views": 0
+            }
+        )
+        print(f"✅ Supabase: {response.status_code} - вакансия сохранена")
+    except Exception as e:
+        print(f"❌ Supabase error: {e}")
+
+def save_vacancy_to_both(original_text, category_id, source_channel, source_message_id, telegram_link):
+    """Очищает текст и сохраняет вакансию в обе БД"""
+    # Очищаем текст от шапки, контакта, инструкции и хэштегов
+    clean_text = clean_vacancy_text(original_text)
+    
+    # Извлекаем заголовок (первая строка или первые 200 символов)
+    lines = clean_text.split('\n')
+    title = lines[0][:200] if lines else clean_text[:200]
+    
+    # Сохраняем в локальную БД
+    save_vacancy_to_db(title, clean_text, category_id, source_channel, source_message_id, telegram_link)
+    
+    # Отправляем в Supabase
+    save_to_supabase(title, clean_text, category_id, source_channel, source_message_id, telegram_link)
 
 def get_db_items(table):
     allowed_tables = ['channels', 'keywords', 'stop_words', 'special_chats']
@@ -913,7 +1038,7 @@ def callback_handler(call):
         bot.send_message(chat_id, "➕ Выберите категорию для добавления карточки:", reply_markup=markup, parse_mode='HTML')
         return
 
-    # Остальные обработчики
+    # Обработчики публикации
     if data.startswith("user_info_"):
         u_id = data.replace("user_info_", "")
         try:
@@ -968,12 +1093,18 @@ def callback_handler(call):
         markup = types.InlineKeyboardMarkup(row_width=2)
         buttons = [types.InlineKeyboardButton(name, callback_data=f"sendto_special_{name}_{original_message_id}") for name in CHANNELS_CONFIG.keys()]
         markup.add(*buttons, types.InlineKeyboardButton("❌ Отмена", callback_data="pub_decline_special"))
-        bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=markup)
+        try:
+            bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=markup)
+        except:
+            bot.send_message(chat_id, "Выберите канал для публикации:", reply_markup=markup)
         bot.answer_callback_query(call.id)
         return
 
     if data.startswith("pub_decline_special_"):
-        bot.edit_message_text(f"❌ <b>ОТКЛОНЕНО</b>", chat_id, call.message.message_id, parse_mode='HTML')
+        try:
+            bot.edit_message_text(f"❌ <b>ОТКЛОНЕНО</b>", chat_id, call.message.message_id, parse_mode='HTML')
+        except:
+            bot.send_message(chat_id, f"❌ <b>ОТКЛОНЕНО</b>", parse_mode='HTML')
         bot.answer_callback_query(call.id)
         return
 
@@ -992,9 +1123,17 @@ def callback_handler(call):
             final = f"{clean.split('Для публикации вакансии')[0].strip()}\n\n{instr}{tags}"
             try:
                 if call.message.content_type in ['photo', 'video', 'animation']:
-                    bot.copy_message(target, chat_id, call.message.message_id, caption=final, parse_mode='HTML')
+                    sent = bot.copy_message(target, chat_id, call.message.message_id, caption=final, parse_mode='HTML')
+                    message_id = sent.message_id
                 else:
-                    bot.send_message(target, final, parse_mode='HTML', disable_web_page_preview=True)
+                    sent = bot.send_message(target, final, parse_mode='HTML', disable_web_page_preview=True)
+                    message_id = sent.message_id
+                
+                # Сохраняем в БД (очищенный текст)
+                category_id = CHANNEL_TO_CATEGORY.get(target)
+                if category_id:
+                    save_vacancy_to_both(final, category_id, target, message_id, f"https://t.me/{target[1:]}/{message_id}")
+                
                 bot.edit_message_text(f"🚀 <b>ОПУБЛИКОВАНО В: {category}</b>\n\n{final}", chat_id, call.message.message_id, parse_mode='HTML')
             except Exception as e: 
                 bot.answer_callback_query(call.id, f"Ошибка: {e}")
@@ -1006,9 +1145,15 @@ def callback_handler(call):
             markup = types.InlineKeyboardMarkup(row_width=2)
             buttons = [types.InlineKeyboardButton(name, callback_data=f"sendto_{name}") for name in CHANNELS_CONFIG.keys()]
             markup.add(*buttons, types.InlineKeyboardButton("❌ Отмена", callback_data="pub_decline"))
-            bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=markup)
+            try:
+                bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=markup)
+            except:
+                bot.send_message(chat_id, "Выберите канал для публикации:", reply_markup=markup)
         else:
-            bot.edit_message_text(f"❌ <b>ОТКЛОНЕНО</b>", chat_id, call.message.message_id, parse_mode='HTML')
+            try:
+                bot.edit_message_text(f"❌ <b>ОТКЛОНЕНО</b>", chat_id, call.message.message_id, parse_mode='HTML')
+            except:
+                bot.send_message(chat_id, f"❌ <b>ОТКЛОНЕНО</b>", parse_mode='HTML')
         return
 
     if data.startswith("sendto_"):
@@ -1023,41 +1168,78 @@ def callback_handler(call):
             final = f"{clean.split('Для публикации вакансии')[0].strip()}\n\n{instr}{tags}"
             try:
                 if call.message.content_type in ['photo', 'video', 'animation']:
-                    bot.copy_message(target, chat_id, call.message.message_id, caption=final, parse_mode='HTML')
+                    sent = bot.copy_message(target, chat_id, call.message.message_id, caption=final, parse_mode='HTML')
+                    message_id = sent.message_id
                 else:
-                    bot.send_message(target, final, parse_mode='HTML', disable_web_page_preview=True)
+                    sent = bot.send_message(target, final, parse_mode='HTML', disable_web_page_preview=True)
+                    message_id = sent.message_id
+                
+                # Сохраняем в БД (очищенный текст)
+                category_id = CHANNEL_TO_CATEGORY.get(target)
+                if category_id:
+                    save_vacancy_to_both(final, category_id, target, message_id, f"https://t.me/{target[1:]}/{message_id}")
+                
                 bot.edit_message_text(f"🚀 <b>ОПУБЛИКОВАНО В: {category}</b>\n\n{final}", chat_id, call.message.message_id, parse_mode='HTML')
-            except Exception as e: bot.answer_callback_query(call.id, f"Ошибка: {e}")
+            except Exception as e: 
+                bot.answer_callback_query(call.id, f"Ошибка: {e}")
         return
 
+    # Обработчики оплаты и админки
     if data.startswith("mod_"):
         parts = data.split("_")
         action, target_id = parts[1], parts[2]
         if action == "approve":
-            bot.edit_message_text(f"✅ <b>Оплата подтверждена.</b>", chat_id, call.message.message_id, parse_mode='HTML')
+            try:
+                bot.edit_message_text(f"✅ <b>Оплата подтверждена.</b>", chat_id, call.message.message_id, parse_mode='HTML')
+            except:
+                bot.send_message(chat_id, f"✅ <b>Оплата подтверждена.</b>", parse_mode='HTML')
             bot.send_message(target_id, "✅ <b>Ваша оплата подтверждена!</b>", parse_mode='HTML')
         else:
-            bot.edit_message_text(f"❌ <b>Оплата отклонена.</b>", chat_id, call.message.message_id, parse_mode='HTML')
+            try:
+                bot.edit_message_text(f"❌ <b>Оплата отклонена.</b>", chat_id, call.message.message_id, parse_mode='HTML')
+            except:
+                bot.send_message(chat_id, f"❌ <b>Оплата отклонена.</b>", parse_mode='HTML')
             bot.send_message(target_id, "❌ <b>Оплата не подтверждена.</b>", parse_mode='HTML')
         return
 
     if data == "adm_parser":
-        bot.edit_message_text("📡 Управление парсером", chat_id, call.message.message_id, reply_markup=get_parser_menu())
+        try:
+            bot.edit_message_text("📡 Управление парсером", chat_id, call.message.message_id, reply_markup=get_parser_menu())
+        except:
+            bot.send_message(chat_id, "📡 Управление парсером", reply_markup=get_parser_menu())
     elif data == "admin_panel":
-        bot.edit_message_text("⚙️ Админка:", chat_id, call.message.message_id, reply_markup=get_admin_panel_markup())
+        try:
+            bot.edit_message_text("⚙️ Админка:", chat_id, call.message.message_id, reply_markup=get_admin_panel_markup())
+        except:
+            bot.send_message(chat_id, "⚙️ Админка:", reply_markup=get_admin_panel_markup())
     elif data == "adm_texts":
-        bot.edit_message_text("📝 Тексты:", chat_id, call.message.message_id, reply_markup=get_admin_texts_markup())
+        try:
+            bot.edit_message_text("📝 Тексты:", chat_id, call.message.message_id, reply_markup=get_admin_texts_markup())
+        except:
+            bot.send_message(chat_id, "📝 Тексты:", reply_markup=get_admin_texts_markup())
     elif data == "adm_ads":
-        bot.edit_message_text("📢 Управление рекламными плашками:", chat_id, call.message.message_id, reply_markup=get_admin_ad_markup())
+        try:
+            bot.edit_message_text("📢 Управление рекламными плашками:", chat_id, call.message.message_id, reply_markup=get_admin_ad_markup())
+        except:
+            bot.send_message(chat_id, "📢 Управление рекламными плашками:", reply_markup=get_admin_ad_markup())
     elif data == "adm_prices":
-        bot.edit_message_text("💰 Цены:", chat_id, call.message.message_id, reply_markup=get_admin_prices_markup())
+        try:
+            bot.edit_message_text("💰 Цены:", chat_id, call.message.message_id, reply_markup=get_admin_prices_markup())
+        except:
+            bot.send_message(chat_id, "💰 Цены:", reply_markup=get_admin_prices_markup())
     elif data == "adm_pay":
-        bot.edit_message_text("💳 Реквизиты:", chat_id, call.message.message_id, reply_markup=get_admin_pay_markup())
+        try:
+            bot.edit_message_text("💳 Реквизиты:", chat_id, call.message.message_id, reply_markup=get_admin_pay_markup())
+        except:
+            bot.send_message(chat_id, "💳 Реквизиты:", reply_markup=get_admin_pay_markup())
     
     elif data == "toggle_ad_button":
         current_settings["ad_button_enabled"] = not current_settings.get("ad_button_enabled", True)
         save_json(SETTINGS_FILE, current_settings)
-        bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=get_admin_ad_markup())
+        try:
+            bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=get_admin_ad_markup())
+        except:
+            bot.send_message(chat_id, "Настройки рекламы", reply_markup=get_admin_ad_markup())
 
     elif data.startswith("edit_"):
         key = data.replace("edit_", "")
@@ -1071,6 +1253,10 @@ def callback_handler(call):
     elif data == "main_menu":
         user_threads[chat_id].update({"state": None, "type": "chat", "tariff": None, "notified": False})
         save_json(DATA_FILE, user_threads)
+        try:
+            bot.delete_message(chat_id, call.message.message_id)
+        except:
+            pass
         bot.send_message(chat_id, current_settings.get("txt_start", "🏠 Меню:"), reply_markup=get_main_menu(), parse_mode='HTML')
 
     elif data == "back_to_text":
@@ -1078,16 +1264,28 @@ def callback_handler(call):
         user_threads[chat_id].update({"state": "writing_text"})
         save_json(DATA_FILE, user_threads)
         txt = current_settings.get(f"txt_{utype}_instr")
+        try:
+            bot.delete_message(chat_id, call.message.message_id)
+        except:
+            pass
         bot.send_message(chat_id, txt, reply_markup=get_nav_menu("main_menu"), parse_mode='HTML')
 
     elif data == "back_to_tariff":
         user_threads[chat_id].update({"state": "waiting_tariff"})
         save_json(DATA_FILE, user_threads)
+        try:
+            bot.delete_message(chat_id, call.message.message_id)
+        except:
+            pass
         bot.send_message(chat_id, "💎 Выберите тип размещения:", reply_markup=get_tariff_menu())
 
     elif data == "back_to_payment_choice":
         user_threads[chat_id].update({"state": "waiting_payment_choice"})
         save_json(DATA_FILE, user_threads)
+        try:
+            bot.delete_message(chat_id, call.message.message_id)
+        except:
+            pass
         bot.send_message(chat_id, "✅ Выберите способ оплаты:", reply_markup=get_payment_choice_menu())
 
     elif data.startswith("parser_"):
@@ -1096,7 +1294,10 @@ def callback_handler(call):
             display_table = "special_chats"
         else:
             display_table = table
-        bot.edit_message_text(f"Управление: {table}", chat_id, call.message.message_id, reply_markup=get_db_manage_markup(display_table))
+        try:
+            bot.edit_message_text(f"Управление: {table}", chat_id, call.message.message_id, reply_markup=get_db_manage_markup(display_table))
+        except:
+            bot.send_message(chat_id, f"Управление: {table}", reply_markup=get_db_manage_markup(display_table))
 
     elif data.startswith("add_"):
         table = data.replace("add_", "")
@@ -1116,18 +1317,27 @@ def callback_handler(call):
         table_name = "_".join(p[1:-1])
         item_id = p[-1]
         delete_db_item(table_name, item_id)
-        bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=get_db_manage_markup(table_name))
+        try:
+            bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=get_db_manage_markup(table_name))
+        except:
+            bot.send_message(chat_id, "Меню управления", reply_markup=get_db_manage_markup(table_name))
 
     elif data.startswith("set_tariff_"):
         user_threads[chat_id].update({"tariff": data.replace("set_tariff_", ""), "state": "waiting_payment_choice"})
         save_json(DATA_FILE, user_threads)
-        bot.edit_message_text("✅ Выберите способ оплаты:", chat_id, call.message.message_id, reply_markup=get_payment_choice_menu())
+        try:
+            bot.edit_message_text("✅ Выберите способ оплаты:", chat_id, call.message.message_id, reply_markup=get_payment_choice_menu())
+        except:
+            bot.send_message(chat_id, "✅ Выберите способ оплаты:", reply_markup=get_payment_choice_menu())
 
     elif data in ["pay_rf", "pay_rb", "pay_crypto"]:
         pay_info = current_settings.get(data, "")
         wait_check_text = current_settings.get("txt_wait_check", "\n\nПришлите чек:")
         final_text = f"{pay_info}\n\n{wait_check_text}"
-        bot.delete_message(chat_id, call.message.message_id) 
+        try:
+            bot.delete_message(chat_id, call.message.message_id)
+        except:
+            pass
         msg = safe_send_message(chat_id, final_text, reply_markup=get_nav_menu("back_to_payment_choice"))
         user_threads[chat_id]["state"] = "waiting_screenshot"
         save_json(DATA_FILE, user_threads)
@@ -1136,17 +1346,26 @@ def callback_handler(call):
     elif data == "toggle_logging":
         current_settings["logging_enabled"] = not current_settings.get("logging_enabled", True)
         save_json(SETTINGS_FILE, current_settings)
-        bot.edit_message_text("⚙️ Админка:", chat_id, call.message.message_id, reply_markup=get_admin_panel_markup())
+        try:
+            bot.edit_message_text("⚙️ Админка:", chat_id, call.message.message_id, reply_markup=get_admin_panel_markup())
+        except:
+            bot.send_message(chat_id, "⚙️ Админка:", reply_markup=get_admin_panel_markup())
 
     elif data in ["vacancy", "resume", "admin_chat"]:
         user_threads[chat_id].update({"type": data, "state": "writing_text", "notified": False})
         save_json(DATA_FILE, user_threads)
         txt = current_settings.get(f"txt_{data}_instr" if data != "admin_chat" else "txt_admin_chat")
-        bot.edit_message_text(txt, chat_id, call.message.message_id, reply_markup=get_nav_menu("main_menu"), parse_mode='HTML')
+        try:
+            bot.edit_message_text(txt, chat_id, call.message.message_id, reply_markup=get_nav_menu("main_menu"), parse_mode='HTML')
+        except:
+            bot.send_message(chat_id, txt, reply_markup=get_nav_menu("main_menu"), parse_mode='HTML')
 
     elif data == "ad":
         markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("✉️ Админ", url="https://t.me/dzmitrynero"), types.InlineKeyboardButton("🏠 Меню", callback_data="main_menu"))
-        bot.edit_message_text(current_settings.get("txt_ad_info"), chat_id, call.message.message_id, reply_markup=markup, parse_mode='HTML')
+        try:
+            bot.edit_message_text(current_settings.get("txt_ad_info"), chat_id, call.message.message_id, reply_markup=markup, parse_mode='HTML')
+        except:
+            bot.send_message(chat_id, current_settings.get("txt_ad_info"), reply_markup=markup, parse_mode='HTML')
 
     bot.answer_callback_query(call.id)
 

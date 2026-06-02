@@ -1,42 +1,660 @@
 {
   "5659638424": {
-    "thread_id": 166,
+    "thread_id": 13903,
     "type": "chat",
     "state": null,
-    "tariff": null,
     "notified": false,
-    "msg_count": 71
+    "msg_count": 2,
+    "tariff": null
   },
-  "8755713304": {
-    "type": "chat",
-    "thread_id": 164,
-    "name": "Vacancy",
-    "state": null,
-    "tariff": null,
-    "notified": false,
-    "msg_count": 20
-  },
-  "8679016850": {
+  "1243528372": {
+    "thread_id": 13974,
     "type": "chat",
     "state": null,
-    "tariff": null,
-    "thread_id": 752,
     "notified": true,
-    "msg_count": 7
-  },
-  "702060967": {
-    "type": "chat",
-    "state": null,
-    "tariff": null,
-    "thread_id": 765,
-    "notified": false
-  },
-  "1101184810": {
-    "type": "admin_chat",
-    "state": "writing_text",
-    "notified": false,
-    "thread_id": 1246,
     "msg_count": 1,
     "tariff": null
+  },
+  "1118416802": {
+    "state": "writing_text",
+    "type": "admin_chat",
+    "tariff": null,
+    "notified": true,
+    "thread_id": 13994,
+    "msg_count": 3
+  },
+  "6477371021": {
+    "thread_id": 14033,
+    "type": "vacancy",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "5065038361": {
+    "thread_id": 14093,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "748823482": {
+    "state": "writing_text",
+    "type": "admin_chat",
+    "tariff": null,
+    "notified": true,
+    "thread_id": 14098,
+    "msg_count": 1
+  },
+  "8292153016": {
+    "state": "writing_text",
+    "type": "vacancy",
+    "tariff": null,
+    "notified": false
+  },
+  "6356221621": {
+    "thread_id": 14209,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "8336816441": {
+    "thread_id": 14296,
+    "type": "vacancy",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "6699805176": {
+    "thread_id": 14325,
+    "type": "vacancy",
+    "state": "waiting_screenshot",
+    "notified": false,
+    "msg_count": 2,
+    "tariff": "standard"
+  },
+  "7584180676": {
+    "thread_id": 14481,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "928096204": {
+    "thread_id": 14502,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "879206706": {
+    "type": "chat",
+    "state": null,
+    "notified": true,
+    "thread_id": 14518,
+    "msg_count": 4,
+    "tariff": null
+  },
+  "8420097188": {
+    "thread_id": 14566,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "453157794": {
+    "thread_id": 14569,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "476831217": {
+    "thread_id": 14575,
+    "type": "vacancy",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "6921936627": {
+    "state": "waiting_tariff"
+  },
+  "1004011151": {
+    "thread_id": 14668,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "561284456": {
+    "thread_id": 14908,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "1121718837": {
+    "thread_id": 14968,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "6636888858": {
+    "thread_id": 15042,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "342304931": {
+    "thread_id": 15118,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "2109625836": {
+    "thread_id": 15155,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "236730471": {
+    "thread_id": 15185,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 4,
+    "tariff": null
+  },
+  "5242325412": {
+    "thread_id": 15204,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "8425913171": {
+    "thread_id": 15269,
+    "type": "vacancy",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "1228621263": {
+    "thread_id": 15289,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "8477903704": {
+    "thread_id": 15319,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "1306851560": {
+    "thread_id": 15329,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "8905524834": {
+    "thread_id": 15344,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "6387720731": {
+    "thread_id": 15349,
+    "type": "resume",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "6353718449": {
+    "thread_id": 15385,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "7522082421": {
+    "thread_id": 15387,
+    "type": "vacancy",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1,
+    "tariff": "standard"
+  },
+  "5837948289": {
+    "thread_id": 15395,
+    "type": "chat",
+    "state": null,
+    "notified": true,
+    "msg_count": 2,
+    "tariff": null
+  },
+  "904667290": {
+    "thread_id": 15411,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "6192873446": {
+    "thread_id": 15416,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "5225702507": {
+    "thread_id": 15424,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "350188154": {
+    "thread_id": 15464,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 2,
+    "tariff": null
+  },
+  "1359510354": {
+    "thread_id": 15515,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "7961585943": {
+    "thread_id": 15517,
+    "type": "vacancy",
+    "state": "waiting_payment_choice",
+    "notified": false,
+    "msg_count": 1,
+    "tariff": "standard"
+  },
+  "1482890322": {
+    "thread_id": 15524,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "7998614399": {
+    "state": "waiting_payment_choice",
+    "type": "chat",
+    "tariff": "standard",
+    "notified": false
+  },
+  "1089542553": {
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "tariff": null,
+    "thread_id": 15552,
+    "msg_count": 2
+  },
+  "5482701699": {
+    "thread_id": 15613,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "400680018": {
+    "thread_id": 15759,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "5217037101": {
+    "state": null,
+    "type": "chat",
+    "tariff": null,
+    "notified": false
+  },
+  "6263128395": {
+    "thread_id": 15889,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "334506926": {
+    "thread_id": 15933,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "296230583": {
+    "thread_id": 15983,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "1941595890": {
+    "thread_id": 16059,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "8216428864": {
+    "thread_id": 16095,
+    "type": "vacancy",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "423824351": {
+    "thread_id": 16143,
+    "type": "vacancy",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "8470660233": {
+    "thread_id": 16177,
+    "type": "resume",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "1414060824": {
+    "thread_id": 16228,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "447440179": {
+    "thread_id": 16362,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "1254195229": {
+    "thread_id": 16378,
+    "type": "vacancy",
+    "state": "waiting_screenshot",
+    "notified": false,
+    "msg_count": 2,
+    "tariff": "fast"
+  },
+  "6028054409": {
+    "thread_id": 16383,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "1124233876": {
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "thread_id": 16391,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "1066869167": {
+    "thread_id": 16426,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "7090780629": {
+    "thread_id": 16466,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 2,
+    "tariff": null
+  },
+  "7097928001": {
+    "thread_id": 16478,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "8557000025": {
+    "thread_id": 16517,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "7679430134": {
+    "thread_id": 16590,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "5676185900": {
+    "thread_id": 16630,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "890088242": {
+    "thread_id": 16646,
+    "type": "chat",
+    "state": null,
+    "notified": true,
+    "msg_count": 4,
+    "tariff": null
+  },
+  "1254159112": {
+    "thread_id": 16668,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "7651761543": {
+    "thread_id": 16721,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "6802559245": {
+    "thread_id": 16775,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "382356284": {
+    "thread_id": 16968,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "8449812950": {
+    "thread_id": 17034,
+    "type": "resume",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "5621849146": {
+    "thread_id": 17049,
+    "type": "resume",
+    "state": "waiting_payment_choice",
+    "notified": false,
+    "msg_count": 1,
+    "tariff": "standard"
+  },
+  "809408002": {
+    "thread_id": 17058,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "960457887": {
+    "thread_id": 17101,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "5753250525": {
+    "thread_id": 17103,
+    "type": "vacancy",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "1260634766": {
+    "thread_id": 17198,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "800269226": {
+    "thread_id": 17315,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "8547780015": {
+    "thread_id": 17334,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0,
+    "tariff": null
+  },
+  "760581323": {
+    "thread_id": 17384,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "1778326539": {
+    "thread_id": 17493,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "8254846037": {
+    "thread_id": 17509,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "1419789152": {
+    "thread_id": 17624,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "8324383607": {
+    "thread_id": 17634,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "6254386738": {
+    "thread_id": 17672,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "1157463031": {
+    "thread_id": 17787,
+    "type": "resume",
+    "state": "waiting_tariff",
+    "notified": false,
+    "msg_count": 1
+  },
+  "5946666202": {
+    "thread_id": 17800,
+    "type": "resume",
+    "state": "waiting_payment_choice",
+    "notified": false,
+    "msg_count": 1,
+    "tariff": "fast"
+  },
+  "7605695437": {
+    "thread_id": 17819,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 1,
+    "tariff": null
+  },
+  "8501981743": {
+    "thread_id": 17842,
+    "type": "vacancy",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
+  },
+  "8666687021": {
+    "thread_id": 17921,
+    "type": "chat",
+    "state": null,
+    "notified": false,
+    "msg_count": 0
+  },
+  "5127811403": {
+    "thread_id": 17927,
+    "type": "resume",
+    "state": "writing_text",
+    "notified": false,
+    "msg_count": 0
   }
 }

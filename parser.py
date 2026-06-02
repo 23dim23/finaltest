@@ -217,6 +217,35 @@ async def check_messages(client, message):
     if len(sent_messages) > 10000:
         sent_messages.clear()
     
+    # ===== СПЕЦИАЛЬНАЯ ОТЛАДКА ДЛЯ ТВОЕГО ЧАТА =====
+    if message.chat.id == -1001156193082:
+        print(f"\n🔴🔴🔴 ВХОДИТ СООБЩЕНИЕ ИЗ ТВОЕГО ЧАТА! 🔴🔴🔴")
+        print(f"ID сообщения: {message.id}")
+        print(f"Текст: {message.text or message.caption}")
+        print(f"message.from_user: {message.from_user}")
+        print(f"message.sender_chat: {message.sender_chat}")
+        print(f"message.chat.type: {message.chat.type}")
+        
+        # Проверяем ключевые слова и стоп-слова из БД
+        channels_db, keywords, stop_words = get_data_from_db()
+        print(f"Ключевые слова в БД: {keywords}")
+        print(f"Стоп-слова в БД: {stop_words}")
+        
+        # Проверяем, есть ли ключевое слово
+        content = message.text or message.caption or ""
+        msg_text_lower = content.lower()
+        for word in keywords:
+            if word and word in msg_text_lower:
+                print(f"✅ Найдено ключевое слово: {word}")
+        for stop_word in stop_words:
+            if stop_word and stop_word in msg_text_lower:
+                print(f"❌ Найдено стоп-слово: {stop_word}")
+        
+        # Проверяем, есть ли чат в списке отслеживаемых
+        print(f"Чат {message.chat.id} в списке каналов для парсинга: {str(message.chat.id) in channels_db or message.chat.username in channels_db if channels_db else 'Нет каналов'}")
+        print(f"🔴🔴🔴 КОНЕЦ ОТЛАДКИ 🔴🔴🔴\n")
+    # ==============================================
+    
     # НОВОЕ: Получаем список особых чатов
     special_chats = get_special_chats()
     

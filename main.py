@@ -3,7 +3,8 @@ import asyncio
 import sys
 import signal
 
-scripts = ["bot.py", "parser.py"]
+# ДОБАВЛЕН telethon_worker.py
+scripts = ["bot.py", "parser.py", "telethon_worker.py"]
 
 def run_script(script_name):
     """Запуск скрипта и возврат процесса"""
